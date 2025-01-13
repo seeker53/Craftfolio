@@ -2,65 +2,73 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 
 // Interface for personal information
 export interface PersonalInfo {
-    name: string;               // Full Name
-    title: string;              // Professional Title
-    email: string;              // Contact Email
-    phone?: string;             // Optional Contact Phone
-    location?: string;          // Optional Location
-    about: string;              // Short Bio
+    name: string;
+    title: string;
+    email: string;
+    phone?: string;
+    location?: string;
+    about: string;
 }
 
 // Interface for skills
 export interface Skill {
-    name: string;               // Name of the skill (e.g., "JavaScript")
-    category: string;           // Category (e.g., "Programming Language")
-    proficiency: string;        // Proficiency level (e.g., "Beginner", "Expert")
-    rating?: number;            // Optional numeric rating
+    name: string;
+    category: string;
+    proficiency: string;
+    rating?: number;
 }
 
 // Interface for projects
 export interface Project {
-    title: string;              // Project Title
-    description: string;        // Short Description
-    techStack: string[];        // Technologies Used
-    githubLink?: string;        // GitHub Repository Link
-    demoLink?: string;          // Live Demo Link
-    images?: string[];          // Array of image URLs
+    title: string;
+    description: string;
+    techStack: string[];
+    githubLink?: string;
+    demoLink?: string;
+    images?: string[];
 }
 
 // Interface for work experience
 export interface Experience {
-    company: string;            // Company Name
-    role: string;               // Role/Title
-    startDate: string;          // Start Date (ISO Format)
-    endDate?: string;           // End Date (or null for current)
-    responsibilities: string[]; // Array of key responsibilities
+    company: string;
+    role: string;
+    startDate: string;
+    endDate?: string;
+    responsibilities: string[];
 }
 
 // Interface for education
 export interface Education {
-    degree: string;             // Degree Earned
-    institution: string;        // University/College Name
-    graduationYear: number;     // Graduation Year
+    degree: string;
+    institution: string;
+    graduationYear: number;
 }
 
 // Interface for certifications
 export interface Certification {
-    title: string;              // Certification Name
-    issuer: string;             // Organization Issuing the Certification
-    dateEarned: string;         // Date Earned (ISO Format)
+    title: string;
+    issuer: string;
+    dateEarned: string;
 }
 
 // Main portfolio interface
 export interface Portfolio extends Document {
-    userId: Schema.Types.ObjectId; // Reference to the user who owns the portfolio
-    personalInfo: PersonalInfo;    // Personal information
-    skills: Skill[];               // Array of skills
-    projects: Project[];           // Array of projects
-    experience: Experience[];      // Array of work experience
-    education: Education[];        // Array of education details
-    certifications: Certification[]; // Array of certifications
-    contactFormEnabled?: boolean;  // Boolean to enable/disable contact form
+    userId: Schema.Types.ObjectId;
+    personalInfo: PersonalInfo;
+    skills: Skill[];
+    projects: Project[];
+    experience: Experience[];
+    education: Education[];
+    certifications: Certification[];
+    contactFormEnabled?: boolean;
+    generateUniquePortfolioLink: () => string;
+    getPortfolioLink: () => string;
+}
+
+// Extend mongoose Model for static methods
+interface PortfolioModel extends Model<Portfolio> {
+    createPortfolio(portfolioData: Portfolio): Promise<Portfolio>;
+    findByUserId(userId: string): Promise<Portfolio[]>;
 }
 
 // Portfolio Schema
@@ -69,7 +77,7 @@ const portfolioSchema = new Schema<Portfolio>(
         userId: {
             type: Schema.Types.ObjectId,
             required: true,
-            ref: "User", // Reference to the User model
+            ref: "User",
         },
         personalInfo: {
             name: { type: String, required: true },
@@ -127,16 +135,29 @@ const portfolioSchema = new Schema<Portfolio>(
     }
 );
 
-// Static method to generate a unique portfolio link
-portfolioSchema.statics.generateUniquePortfolioLink = function (this: Model<Portfolio>) {
-    return (portfolioId: string) => {
-        return `www.craftfolio.com/user/portfolios/${portfolioId}-portfolio`;
-    };
+// Static method to create a portfolio (used for creating a new portfolio)
+portfolioSchema.statics.createPortfolio = async function (portfolioData: Portfolio) {
+    const portfolio = new this(portfolioData); // Create new portfolio instance
+    await portfolio.save(); // Save to DB
+    return portfolio; // Return the created portfolio
+};
+
+// Static method to find portfolios by userId
+portfolioSchema.statics.findByUserId = async function (userId: string) {
+    const portfolios = await this.find({ userId }).exec(); // Find portfolios for the specific user
+    return portfolios; // Return all portfolios for this user
+};
+
+// Instance method to generate unique portfolio link
+portfolioSchema.methods.generateUniquePortfolioLink = function () {
+    const baseUrl = process.env.PORTFOLIO_BASE_URL || "www.example.com";
+    return `${baseUrl}/user/portfolios/${this._id}-portfolio`;
 };
 
 // Instance method to get the portfolio link for the user
-portfolioSchema.methods.getPortfolioLink = function (this: Portfolio) {
-    return `www.craftfolio.com/user/portfolios/${this._id}-portfolio`;
+portfolioSchema.methods.getPortfolioLink = function () {
+    const baseUrl = process.env.PORTFOLIO_BASE_URL || "www.example.com";
+    return `${baseUrl}/user/portfolios/${this._id}-portfolio`;
 };
 
-export const PortfolioModel = mongoose.model<Portfolio>("Portfolio", portfolioSchema);
+export const PortfolioModel = mongoose.model<Portfolio, PortfolioModel>("Portfolio", portfolioSchema);
