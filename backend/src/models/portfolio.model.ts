@@ -52,12 +52,91 @@ export interface Certification {
 }
 
 // Main portfolio interface
-export interface Portfolio {
-    personalInfo: PersonalInfo; // Personal information
-    skills: Skill[];            // Array of skills
-    projects: Project[];        // Array of projects
-    experience: Experience[];   // Array of work experience
-    education: Education[];     // Array of education details
+export interface Portfolio extends Document {
+    userId: Schema.Types.ObjectId; // Reference to the user who owns the portfolio
+    personalInfo: PersonalInfo;    // Personal information
+    skills: Skill[];               // Array of skills
+    projects: Project[];           // Array of projects
+    experience: Experience[];      // Array of work experience
+    education: Education[];        // Array of education details
     certifications: Certification[]; // Array of certifications
-    contactFormEnabled?: boolean; // Boolean to enable/disable contact form
+    contactFormEnabled?: boolean;  // Boolean to enable/disable contact form
 }
+
+// Portfolio Schema
+const portfolioSchema = new Schema<Portfolio>(
+    {
+        userId: {
+            type: Schema.Types.ObjectId,
+            required: true,
+            ref: "User", // Reference to the User model
+        },
+        personalInfo: {
+            name: { type: String, required: true },
+            title: { type: String, required: true },
+            email: { type: String, required: true },
+            phone: { type: String },
+            location: { type: String },
+            about: { type: String, required: true },
+        },
+        skills: [
+            {
+                name: { type: String, required: true },
+                category: { type: String, required: true },
+                proficiency: { type: String, required: true },
+                rating: { type: Number },
+            },
+        ],
+        projects: [
+            {
+                title: { type: String, required: true },
+                description: { type: String, required: true },
+                techStack: [{ type: String, required: true }],
+                githubLink: { type: String },
+                demoLink: { type: String },
+                images: [{ type: String }],
+            },
+        ],
+        experience: [
+            {
+                company: { type: String, required: true },
+                role: { type: String, required: true },
+                startDate: { type: String, required: true },
+                endDate: { type: String },
+                responsibilities: [{ type: String, required: true }],
+            },
+        ],
+        education: [
+            {
+                degree: { type: String, required: true },
+                institution: { type: String, required: true },
+                graduationYear: { type: Number, required: true },
+            },
+        ],
+        certifications: [
+            {
+                title: { type: String, required: true },
+                issuer: { type: String, required: true },
+                dateEarned: { type: String, required: true },
+            },
+        ],
+        contactFormEnabled: { type: Boolean, default: true },
+    },
+    {
+        timestamps: true,
+    }
+);
+
+// Static method to generate a unique portfolio link
+portfolioSchema.statics.generateUniquePortfolioLink = function (this: Model<Portfolio>) {
+    return (portfolioId: string) => {
+        return `www.craftfolio.com/user/portfolios/${portfolioId}-portfolio`;
+    };
+};
+
+// Instance method to get the portfolio link for the user
+portfolioSchema.methods.getPortfolioLink = function (this: Portfolio) {
+    return `www.craftfolio.com/user/portfolios/${this._id}-portfolio`;
+};
+
+export const PortfolioModel = mongoose.model<Portfolio>("Portfolio", portfolioSchema);
