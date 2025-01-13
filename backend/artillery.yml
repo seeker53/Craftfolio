@@ -1,0 +1,10 @@
+# artillery-config.yaml
+config:
+  target: "http://localhost:3000" # Replace with your backend's URL
+  phases:
+    - duration: 60
+      arrivalRate: 10 # 10 requests per second
+scenarios:
+  - flow:
+      - get:
+          url: "/api/endpoint" # Replace with your API endpoint
