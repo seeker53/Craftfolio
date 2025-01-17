@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-
+import { ApiError } from "../utils/ApiError";
 interface LinkedPlatforms {
     github?: string;
     leetcode?: string;
@@ -115,6 +115,10 @@ userSchema.pre("save", async function (next) {
 
 // Instance Method: Verify if the password is correct
 userSchema.methods.isPasswordCorrect = async function (password: string) {
+
+    if (!this.password) {
+        throw new ApiError(500, "User password is missing from the database");
+    }
     return await bcrypt.compare(password, this.password);
 };
 
@@ -156,12 +160,6 @@ userSchema.statics.getPublicUserData = async function (userId: string) {
         .populate("portfolio blogs", "title description");
 };
 
-// Static Method: Verify if a user exists
-userSchema.statics.isUserExists = async function (username: string, email: string) {
-    return this.findOne({
-        $or: [{ username }, { email }],
-    }).select("_id username email");
-};
 
 // Export the User model
 export const User: IUserModel = mongoose.model<IUser, IUserModel>(

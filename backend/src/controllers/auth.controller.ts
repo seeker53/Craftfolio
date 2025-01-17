@@ -5,9 +5,11 @@ import { User } from "../models/user.model";
 import { uploadOnCloudinary } from "../utils/cloudinary";
 import { ApiResponse } from "../utils/ApiResponse";
 import { Request } from "express";
+import { Types } from 'mongoose';
 
-const generateTokens = async (user: any) => {
+const generateTokens = async (userId: Types.ObjectId) => {
     try {
+        const user = await User.findById(userId);
         const accessToken = await user.generateAccessToken();
         const refreshToken = await user.generateRefreshToken();
         user.refreshToken = refreshToken;
@@ -94,7 +96,9 @@ const loginUser = asyncHandler(async (req: Request, res: Response) => {
     }
 
     // Check if user exists
-    const user = await User.isUserExists(username, email);
+    const user = await User.findOne({
+        $or: [{ username }, { email }],
+    }).select("+password");
 
     if (!user) {
         throw new ApiError(404, "User not found");
@@ -102,10 +106,33 @@ const loginUser = asyncHandler(async (req: Request, res: Response) => {
 
     // Check if password is correct
     const isPasswordCorrect = await user.isPasswordCorrect(password);
-    
- });
+    if (!isPasswordCorrect) {
+        throw new ApiError(400, "Invalid credentials");
+    }
 
-const logoutUser = asyncHandler(async (req: Request, res: Response) => { });
+    // Generate JWT tokens
+    const { accessToken, refreshToken } = await generateTokens(user._id as Types.ObjectId);
+
+    const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
+
+    const options = {
+        httpOnly: true,
+        secure: true
+    };
+
+    return res
+        .status(200)
+        .cookie("refreshToken", refreshToken, options)
+        .cookie("accessToken", accessToken, options)
+        .json(
+            new ApiResponse(200, loggedInUser, "User logged in successfully")
+        );
+
+});
+
+const logoutUser = asyncHandler(async (req: Request, res: Response) => {
+
+});
 
 const refreshToken = asyncHandler(async (req: Request, res: Response) => { });
 
