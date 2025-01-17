@@ -18,7 +18,6 @@ interface IUser extends Document {
     coverImage?: string;
     dob?: Date;
     emailVisible: boolean;
-    portfolioVisible: boolean;
     portfolio: mongoose.Types.ObjectId[];
     blogs: mongoose.Types.ObjectId[];
     linkedPlatforms: LinkedPlatforms;
@@ -34,7 +33,7 @@ interface IUser extends Document {
 // Add static methods interface
 interface IUserModel extends Model<IUser> {
     getPublicUserData(userId: string): Promise<IUser | null>;
-    isUserExists(usernameOrEmail: string): Promise<IUser | null>;
+    isUserExists(username: string, email: string): Promise<IUser | null>;
 }
 
 // Define the User schema
@@ -73,10 +72,6 @@ const userSchema = new Schema<IUser>(
         },
         emailVisible: {
             type: Boolean, // Indicates if email should be visible
-            default: true,
-        },
-        portfolioVisible: {
-            type: Boolean, // Indicates if portfolio links should be visible
             default: true,
         },
         portfolio: [
@@ -162,9 +157,9 @@ userSchema.statics.getPublicUserData = async function (userId: string) {
 };
 
 // Static Method: Verify if a user exists
-userSchema.statics.isUserExists = async function (usernameOrEmail: string) {
+userSchema.statics.isUserExists = async function (username: string, email: string) {
     return this.findOne({
-        $or: [{ username: usernameOrEmail }, { email: usernameOrEmail }],
+        $or: [{ username }, { email }],
     }).select("_id username email");
 };
 

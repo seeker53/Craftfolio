@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import { connectRedis } from './utils/redis';
+import dotenv from 'dotenv';
+dotenv.config();
 
 // Create Express app
 const app = express();
@@ -16,10 +18,12 @@ app.use(express.urlencoded({ extended: true, limit: '16kb' }));
 app.use(express.static("public"));
 
 // Routes (import and use routers here)
-// import userRouter from './routes/user.routes';
-// app.use("/api/v1/users", userRouter);
+import authRouter from './routes/auth.route';
+app.use("/api/v1/users", authRouter);
+
+
 
 // Redis Connection
-connectRedis();
+// connectRedis();
 
 export { app };

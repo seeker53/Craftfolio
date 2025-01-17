@@ -2,40 +2,37 @@ import { ApiError } from "../utils/ApiError";
 import path from "path";
 import multer from "multer";
 
+// Set up storage for multer
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, './public/temp')
+        cb(null, './public/uploads');
     },
     filename: function (req, file, cb) {
-        cb(null, file.originalname)
+        cb(null, file.originalname); // Use original filename
     }
 });
 
+// Check file type for image validation
 function checkFileType(file, cb) {
-    let filetypes;
+    // Allow only image types (jpeg, jpg, png, gif)
+    const filetypes = /jpeg|jpg|png|gif/;
 
-    // Determine which file types to allow based on the file field name
-    if (file.fieldname === 'avatar' || file.fieldname === 'coverImage' || file.fieldname === 'thumbnail') {
-        filetypes = /jpeg|jpg|png|gif/;
-    } else if (file.fieldname === 'video') {
-        filetypes = /mp4|avi|mkv/;
-    }
-
-    // Check file extension and MIME type
+    // Check extension and MIME type
     const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = filetypes.test(file.mimetype);
 
     if (mimetype && extname) {
-        return cb(null, true);
+        return cb(null, true); // File is valid
     } else {
-        throw new ApiError(404, "File type not supported");
+        throw new ApiError(404, "File type not supported. Only images are allowed.");
     }
 }
 
+// Multer upload configuration
 export const upload = multer({
     storage: storage,
-    limits: { fileSize: 5000000 }, // Adjust size limit for videos if necessary
+    limits: { fileSize: 5000000 }, // Limit file size to 5MB
     fileFilter: function (req, file, cb) {
-        checkFileType(file, cb);
+        checkFileType(file, cb); // Validate file type
     }
 });

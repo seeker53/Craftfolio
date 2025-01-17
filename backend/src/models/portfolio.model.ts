@@ -61,6 +61,7 @@ export interface Portfolio extends Document {
     education: Education[];
     certifications: Certification[];
     contactFormEnabled?: boolean;
+    visible: boolean;
     generateUniquePortfolioLink: () => string;
     getPortfolioLink: () => string;
 }
@@ -128,6 +129,11 @@ const portfolioSchema = new Schema<Portfolio>(
                 dateEarned: { type: String, required: true },
             },
         ],
+        visible: {
+            type: Boolean, // Indicates if the portfolio should be visible
+            required: true,
+            default: true,
+        },
         contactFormEnabled: { type: Boolean, default: true },
     },
     {
