@@ -10,7 +10,7 @@ interface LinkedPlatforms {
     atcoder?: string;
 }
 
-interface IUser extends Document {
+export interface IUser extends Document {
     username: string;
     email: string;
     fullName: string;

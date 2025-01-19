@@ -1,11 +1,12 @@
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { ApiError } from "../utils/ApiError";
-import { User } from "../models/user.model";
+import { User, IUser } from "../models/user.model";
 import { asyncHandler } from "../utils/asyncHandler";
 import { Request, Response, NextFunction } from "express";
 
 interface IRequest extends Request {
-    user?: any;
+    user?: IUser;
+    cookies: { [key: string]: string };
 }
 
 export const verifyJWT = asyncHandler(async (req: IRequest, _, next: NextFunction) => {
