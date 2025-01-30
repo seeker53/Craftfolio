@@ -14,10 +14,12 @@ export interface IUser extends Document {
     username: string;
     email: string;
     fullName: string;
+    bio?: string;
     profileImage: string;
     coverImage?: string;
-    dob?: Date;
+    age?: Date;
     emailVisible: boolean;
+    ageVisible: boolean;
     portfolio: mongoose.Types.ObjectId[];
     blogs: mongoose.Types.ObjectId[];
     linkedPlatforms: LinkedPlatforms;
@@ -67,11 +69,18 @@ const userSchema = new Schema<IUser>(
         coverImage: {
             type: String, // Cloudinary URL for cover image
         },
-        dob: {
+        age: {
             type: Date, // Date of birth
+        },
+        bio: {
+            type: String, // User bio
         },
         emailVisible: {
             type: Boolean, // Indicates if email should be visible
+            default: true,
+        },
+        ageVisible: {
+            type: Boolean, // Indicates if dob should be visible
             default: true,
         },
         portfolio: [
