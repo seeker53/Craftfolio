@@ -1,82 +1,81 @@
-import { v2 as cloudinary } from "cloudinary";
-import fs from "fs/promises";
-import { ApiError } from "./ApiError.js";
+import { v2 as cloudinary } from 'cloudinary';
+import fs from 'fs';
+import path from 'path';
+import { ApiError } from './ApiError.js';
 
-// Configure Cloudinary
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
+    api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-/**
- * Upload a file to Cloudinary.
- * @param {string} localFilePath - The local file path to be uploaded.
- * @returns {Promise<object>} - The Cloudinary response object.
- */
-const uploadOnCloudinary = async (localFilePath: string) => {
-    try {
-        if (!localFilePath) throw new ApiError(400, "Local file path is required");
 
-        // Upload the file to Cloudinary
-        const response = await cloudinary.uploader.upload(localFilePath, {
-            resource_type: "image", // Ensure we only upload images
-            folder: "profile_images", // Organize uploads in a specific folder
+const uploadOnCloudinary = async (localFilePath) => {
+    try {
+        console.log(`Attempting to upload file: ${localFilePath}`);
+
+        if (!localFilePath) {
+            console.log('No file path provided');
+            return null;
+        }
+
+        const absolutePath = path.resolve(localFilePath);
+        console.log(`Resolved path for upload: ${absolutePath}`);
+
+        if (!fs.existsSync(absolutePath)) {
+            console.log('File does not exist:', absolutePath);
+            return null;
+        }
+
+        const response = await cloudinary.uploader.upload(absolutePath, {
+            resource_type: "auto"
         });
 
         if (!response) {
-            throw new ApiError(504, "Failed to upload image to Cloudinary");
+            console.log('No response from Cloudinary');
+            return null;
         }
 
-        console.log("File successfully uploaded to Cloudinary:", response.url);
+        console.log('Upload successful:', response.url);
 
-        // Clean up local file
-        await fs.unlink(localFilePath);
+        await fs.promises.unlink(absolutePath);
+        console.log('Deleted local file:', absolutePath);
 
         return response;
-    } catch (error: any) {
-        console.error("Cloudinary Upload Error:", error.message);
-
-        // Ensure local file is cleaned up
-        await fs.unlink(localFilePath).catch(() => console.error("Failed to delete local file"));
-
-        throw error; // Propagate the error
+    } catch (error) {
+        console.error('Error uploading file:', error.message);
+        return null;
     }
 };
 
-/**
- * Delete a file from Cloudinary.
- * @param {string} publicId - The public ID of the file to delete.
- * @returns {Promise<object>} - The Cloudinary API response.
- */
-const deleteFromCloudinary = async (publicId: string) => {
+const deleteFromCloudinary = async (publicId) => {
     try {
-        if (!publicId) throw new ApiError(400, "Public ID is required");
-
-        const result = await cloudinary.uploader.destroy(publicId, {
-            resource_type: "image",
+        console.log('Attempting to delete file from Cloudinary with public ID:', publicId);
+        const result = await cloudinary.api.delete_resources([publicId], {
+            type: 'upload',
+            resource_type: 'image'
         });
-
-        console.log("Cloudinary Delete Result:", result);
-
+        console.log('Cloudinary Delete Result:', result);
         return result;
-    } catch (error: any) {
-        console.error("Cloudinary Deletion Error:", error.message);
-        throw new ApiError(504, `Failed to delete image from Cloudinary: ${error.message}`);
+    } catch (err) {
+        console.error('Error deleting from Cloudinary:', err.message);
+        throw new ApiError(504, `Failed to delete old image from Cloudinary: ${err.message}`);
     }
 };
 
-/**
- * Extract the public ID from a Cloudinary URL.
- * @param {string} url - The Cloudinary URL.
- * @returns {string} - The extracted public ID.
- */
-const getPublicIdFromUrl = (url: string): string => {
-    if (!url) return "";
-
-    // Extract the public ID using regex
-    const matches = url.match(/\/(?:[^/]+\/)+([^/.]+)\./);
-    return matches ? matches[1] : "";
+const getPublicIdFromUrl = (url) => {
+    if (!url) {
+        console.log('No URL provided to extract public ID');
+        return '';
+    }
+    // Extract the public ID from the URL using a regular expression
+    const matches = url.match(/\/v\d+\/(.+)\./);
+    if (matches) {
+        console.log('Extracted public ID from URL:', matches[1]);
+    } else {
+        console.log('No public ID found in URL');
+    }
+    return matches ? matches[1] : '';
 };
 
 export { uploadOnCloudinary, deleteFromCloudinary, getPublicIdFromUrl };

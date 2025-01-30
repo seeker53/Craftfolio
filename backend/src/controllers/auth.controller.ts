@@ -1,16 +1,15 @@
 import { asyncHandler } from "../utils/asyncHandler";
-import { Response } from "express";
+import { Response, Request } from "express";
 import { ApiError } from "../utils/ApiError";
-import { User } from "../models/user.model";
+import { User, IUser } from "../models/user.model";
 import { uploadOnCloudinary } from "../utils/cloudinary";
 import { ApiResponse } from "../utils/ApiResponse";
-import { Request } from "express";
 import { Types } from 'mongoose';
-import { IUser } from "../models/user.model";
 import jwt from "jsonwebtoken";
 
 interface IRequest extends Request {
     user?: IUser; // User is optional to prevent errors in unauthenticated routes
+    files?: Record<string, Express.Multer.File[]>;
 }
 const generateTokens = async (userId: Types.ObjectId) => {
     try {
@@ -25,24 +24,8 @@ const generateTokens = async (userId: Types.ObjectId) => {
     }
 };
 
-// Define the Multer File type
-interface MulterFile {
-    fieldname: string;
-    originalname: string;
-    encoding: string;
-    mimetype: string;
-    destination: string;
-    filename: string;
-    path: string;
-    size: number;
-}
 
-// Extend the Express Request interface to include Multer files
-interface MulterRequest extends Request {
-    files?: Record<string, Express.Multer.File[]>; // Use Express.Multer.File[] for compatibility
-}
-
-const registerUser = asyncHandler(async (req: MulterRequest, res: Response) => {
+const registerUser = asyncHandler(async (req: IRequest, res: Response) => {
     const { fullName, username, email, password } = req.body;
 
     // Validate input fields
@@ -51,18 +34,25 @@ const registerUser = asyncHandler(async (req: MulterRequest, res: Response) => {
     }
 
     // Check if user exists
-    const userExists = await User.isUserExists(username, email);
+    const userExists = await User.findOne({ $or: [{ username }, { email }] });
     if (userExists) {
         throw new ApiError(400, "User already exists");
     }
 
     // Access files from request
-    const profileImageLocalPath = req.files?.profileImage?.[0]?.path;
-    const coverImageLocalPath = req.files?.coverImage?.[0]?.path || null;
+    const profileImageLocalPath = req.files?.profileImage?.[0]?.filename
+        ? `public/uploads/${req.files.profileImage[0].filename}`
+        : null;
 
+    const coverImageLocalPath = req.files?.coverImage?.[0]?.filename
+        ? `public/uploads/${req.files.coverImage[0].filename}`
+        : null;
+    // console.log("Profile Image Path:", profileImageLocalPath); // Debugging
+    // Ensure profile image is required
     if (!profileImageLocalPath) {
         throw new ApiError(400, "Profile image is required");
     }
+
 
     // Upload images to Cloudinary
     const profileImage = await uploadOnCloudinary(profileImageLocalPath);
@@ -153,8 +143,6 @@ const logoutUser = asyncHandler(async (req: IRequest, res: Response) => {
 
     return res.status(200).json({ success: true, message: "User logged out successfully" });
 });
-
-
 
 const refreshAccessToken = asyncHandler(async (req: Request, res: Response) => {
     const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
