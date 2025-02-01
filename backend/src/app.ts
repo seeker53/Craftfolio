@@ -20,9 +20,13 @@ app.use(express.static("public"));
 
 // Routes (import and use routers here)
 import authRouter from './routes/auth.route';
-app.use("/api/v1/users", authRouter);
+app.use("/api/v1/auth", authRouter);
 
+import userRouter from './routes/user.route';
+app.use("/api/v1/users", userRouter);
 
+import portfolioRouter from './routes/portfolio.route';
+app.use("/api/v1/portfolios", portfolioRouter);
 
 // Redis Connection
 // connectRedis();

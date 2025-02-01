@@ -1,7 +1,6 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
-// Interface for personal information
-export interface PersonalInfo {
+export interface IPersonalInfo {
     name: string;
     title: string;
     email: string;
@@ -10,16 +9,14 @@ export interface PersonalInfo {
     about: string;
 }
 
-// Interface for skills
-export interface Skill {
+export interface ISkill {
     name: string;
     category: string;
     proficiency: string;
     rating?: number;
 }
 
-// Interface for projects
-export interface Project {
+export interface IProject {
     title: string;
     description: string;
     techStack: string[];
@@ -28,8 +25,7 @@ export interface Project {
     images?: string[];
 }
 
-// Interface for work experience
-export interface Experience {
+export interface IExperience {
     company: string;
     role: string;
     startDate: string;
@@ -37,43 +33,35 @@ export interface Experience {
     responsibilities: string[];
 }
 
-// Interface for education
-export interface Education {
+export interface IEducation {
     degree: string;
     institution: string;
     graduationYear: number;
 }
 
-// Interface for certifications
-export interface Certification {
-    title: string;
-    issuer: string;
-    dateEarned: string;
+export interface ICertification {
+    name: string;
+    link: string;
 }
 
-// Main portfolio interface
-export interface Portfolio extends Document {
+export interface IPortfolio extends Document {
     userId: Schema.Types.ObjectId;
-    personalInfo: PersonalInfo;
-    skills: Skill[];
-    projects: Project[];
-    experience: Experience[];
-    education: Education[];
-    certifications: Certification[];
+    personalInfo: IPersonalInfo;
+    skills: ISkill[];
+    projects: IProject[];
+    experience: IExperience[];
+    education: IEducation[];
+    certifications: ICertification[];
     contactFormEnabled?: boolean;
     visible: boolean;
-    generateUniquePortfolioLink: () => string;
-    getPortfolioLink: () => string;
+    generatePortfolioLink(): string;
 }
 
-// Extend mongoose Model for static methods
-interface PortfolioModel extends Model<Portfolio> {
-    createPortfolio(portfolioData: Portfolio): Promise<Portfolio>;
-    findByUserId(userId: string): Promise<Portfolio[]>;
+interface IPortfolioModel extends Model<IPortfolio> {
+    findByUserId(userId: string | Schema.Types.ObjectId): Promise<IPortfolio[]>;
 }
 
-// Portfolio Schema
-const portfolioSchema = new Schema<Portfolio>(
+const portfolioSchema = new Schema<IPortfolio>(
     {
         userId: {
             type: Schema.Types.ObjectId,
@@ -124,13 +112,12 @@ const portfolioSchema = new Schema<Portfolio>(
         ],
         certifications: [
             {
-                title: { type: String, required: true },
-                issuer: { type: String, required: true },
-                dateEarned: { type: String, required: true },
+                name: { type: String, required: true },
+                link: { type: String, required: true },
             },
         ],
         visible: {
-            type: Boolean, // Indicates if the portfolio should be visible
+            type: Boolean,
             required: true,
             default: true,
         },
@@ -141,29 +128,16 @@ const portfolioSchema = new Schema<Portfolio>(
     }
 );
 
-// Static method to create a portfolio (used for creating a new portfolio)
-portfolioSchema.statics.createPortfolio = async function (portfolioData: Portfolio) {
-    const portfolio = new this(portfolioData); // Create new portfolio instance
-    await portfolio.save(); // Save to DB
-    return portfolio; // Return the created portfolio
-};
 
-// Static method to find portfolios by userId
-portfolioSchema.statics.findByUserId = async function (userId: string) {
-    const portfolios = await this.find({ userId }).exec(); // Find portfolios for the specific user
-    return portfolios; // Return all portfolios for this user
+portfolioSchema.statics.findByUserId = async function (userId: Schema.Types.ObjectId) {
+    return this.find({ userId, visible: true }).exec();
 };
-
-// Instance method to generate unique portfolio link
-portfolioSchema.methods.generateUniquePortfolioLink = function () {
+portfolioSchema.methods.generatePortfolioLink = function () {
     const baseUrl = process.env.PORTFOLIO_BASE_URL || "www.example.com";
     return `${baseUrl}/user/portfolios/${this._id}-portfolio`;
 };
 
-// Instance method to get the portfolio link for the user
-portfolioSchema.methods.getPortfolioLink = function () {
-    const baseUrl = process.env.PORTFOLIO_BASE_URL || "www.example.com";
-    return `${baseUrl}/user/portfolios/${this._id}-portfolio`;
-};
-
-export const PortfolioModel = mongoose.model<Portfolio, PortfolioModel>("Portfolio", portfolioSchema);
+export const Portfolio: IPortfolioModel = mongoose.model<IPortfolio, IPortfolioModel>(
+    "Portfolio",
+    portfolioSchema
+);
