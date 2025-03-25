@@ -8,7 +8,8 @@ import {
     getPortfolioById,
     updatePortfolio,
     deletePortfolio,
-    getPortfolioCapUsage
+    getPortfolioCapUsage,
+    getPortfolioLink
 } from '../controllers/portfolio.controller';
 
 const portfolioRouter = Router();
@@ -20,6 +21,8 @@ portfolioRouter.route("/").post(verifyJWT, createPortfolio);
 portfolioRouter.route("/cap-usage").get(verifyJWT, getPortfolioCapUsage);
 
 portfolioRouter.route("/:portfolioId/visibility").patch(verifyJWT, validatePortfolioOwnership, togglePortfolioVisibility);
+
+portfolioRouter.route("/link/:portfolioId").get(verifyJWT, validatePortfolioOwnership, getPortfolioLink);
 
 portfolioRouter.route("/:portfolioId").get(verifyJWT, validatePortfolioOwnership, getPortfolioById);
 

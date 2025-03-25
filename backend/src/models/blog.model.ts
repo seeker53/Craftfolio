@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
-interface BlogDocument extends Document {
+export interface IBlog extends Document {
     title: string;
     content: string;
     author: mongoose.Schema.Types.ObjectId;
@@ -11,11 +11,11 @@ interface BlogDocument extends Document {
     publish: () => Promise<void>;
 }
 
-interface BlogModel extends Model<BlogDocument> {
-    findByAuthor: (authorId: string) => Promise<BlogDocument[]>;
+interface BlogModel extends Model<IBlog> {
+    findByAuthor(authorId: string): mongoose.Query<IBlog[], IBlog>;
 }
 
-const blogSchema = new Schema<BlogDocument>(
+const blogSchema = new Schema<IBlog>(
     {
         title: { type: String, required: true, trim: true },
         content: { type: String, required: true },
@@ -40,8 +40,15 @@ blogSchema.methods.publish = async function (): Promise<void> {
 };
 
 // Static Methods
-blogSchema.statics.findByAuthor = async function (authorId: string) {
+blogSchema.statics.findByAuthor = function (authorId: string) {
     return this.find({ author: authorId });
 };
 
-export const Blog = mongoose.model<BlogDocument, BlogModel>("Blog", blogSchema);
+blogSchema.pre<IBlog>("save", async function (next) {
+    if (!this.isModified("isPublished")) return next();
+    if (this.isPublished) this.publishedAt = new Date();
+    next();
+});
+
+export const Blog = mongoose.model<IBlog, BlogModel>("Blog", blogSchema);
+

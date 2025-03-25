@@ -40,6 +40,7 @@ export const createPortfolio = asyncHandler(async (req: IRequest, res: Response)
         experience,
         education,
         certifications,
+        linkedPlatforms,
         visible,
         contactFormEnabled
     } = req.body;
@@ -106,6 +107,7 @@ export const createPortfolio = asyncHandler(async (req: IRequest, res: Response)
         projects: projects || [],
         experience: experience || [],
         education: education || [],
+        linkedPlatforms: linkedPlatforms || {},
         certifications: certifications || [],
         visible: visible ?? true,
         contactFormEnabled: contactFormEnabled ?? true,
@@ -213,4 +215,28 @@ export const getPortfolioCapUsage = asyncHandler(async (req: IRequest, res: Resp
     };
 
     res.status(200).json(new ApiResponse(200, usageData));
+});
+
+export const getPortfolioLink = asyncHandler(async (req: IRequest, res: Response) => {
+    //debugging
+    console.log("req.portfolio", req.portfolio);
+
+    const portfolioId = req.portfolio?._id;
+
+    if (!portfolioId) {
+        throw new ApiError(404, "Portfolio not found");
+    }
+
+    const portfolio = await Portfolio.findById(portfolioId);
+    if (!portfolio) {
+        throw new ApiError(404, "Portfolio not found");
+    }
+    // Generate a public link for the portfolio
+    const publicId = portfolio.generatePortfolioLink();
+    if (!publicId) {
+        throw new ApiError(500, "Failed to generate portfolio link");
+    }
+
+    res.status(200).json(new ApiResponse(200, publicId));
+
 });

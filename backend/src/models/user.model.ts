@@ -2,13 +2,6 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import { ApiError } from "../utils/ApiError";
-interface LinkedPlatforms {
-    github?: string;
-    leetcode?: string;
-    codeforces?: string;
-    codechef?: string;
-    atcoder?: string;
-}
 
 export interface IUser extends Document {
     username: string;
@@ -22,7 +15,6 @@ export interface IUser extends Document {
     ageVisible: boolean;
     portfolio: mongoose.Types.ObjectId[];
     blogs: mongoose.Types.ObjectId[];
-    linkedPlatforms: LinkedPlatforms;
     password: string;
     refreshToken?: string;
 
@@ -95,13 +87,6 @@ const userSchema = new Schema<IUser>(
                 ref: "Blog",
             },
         ],
-        linkedPlatforms: {
-            github: { type: String, trim: true },
-            leetcode: { type: String, trim: true },
-            codeforces: { type: String, trim: true },
-            codechef: { type: String, trim: true },
-            atcoder: { type: String, trim: true },
-        },
         password: {
             type: String,
             required: [true, "Password is required"],

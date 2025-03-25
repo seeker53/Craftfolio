@@ -44,6 +44,13 @@ export interface ICertification {
     link: string;
 }
 
+export interface LinkedPlatforms {
+    githubUsername?: string;
+    leetcodeUsername?: string;
+    codeforcesUsername?: string;
+    codechefUsername?: string;
+    atcoderUsername?: string;
+}
 export interface IPortfolio extends Document {
     userId: Schema.Types.ObjectId;
     personalInfo: IPersonalInfo;
@@ -53,6 +60,7 @@ export interface IPortfolio extends Document {
     education: IEducation[];
     certifications: ICertification[];
     contactFormEnabled?: boolean;
+    linkedPlatforms: LinkedPlatforms;
     visible: boolean;
     generatePortfolioLink(): string;
 }
@@ -116,6 +124,13 @@ const portfolioSchema = new Schema<IPortfolio>(
                 link: { type: String, required: true },
             },
         ],
+        linkedPlatforms: {
+            githubUsername: { type: String, trim: true },
+            leetcodeUsername: { type: String, trim: true },
+            codeforcesUsername: { type: String, trim: true },
+            codechefUsername: { type: String, trim: true },
+            atcoderUsername: { type: String, trim: true },
+        },
         visible: {
             type: Boolean,
             required: true,

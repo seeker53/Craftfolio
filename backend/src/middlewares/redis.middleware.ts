@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import redisClient from '../utils/redis';
+import { redisClient } from '../cache/redis';
 import { asyncHandler } from '../utils/asyncHandler';
 import { ApiResponse } from '../utils/ApiResponse';
-import { ApiError } from '../utils/ApiError';
 
 export const cacheMiddleware = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const cacheKey = `cache:${req.originalUrl}`; // Cache key based on the URL
@@ -13,7 +12,7 @@ export const cacheMiddleware = asyncHandler(async (req: Request, res: Response, 
         if (cachedData) {
             console.log('Cache hit for:', cacheKey);
             // Send the cached response
-            return new ApiResponse(200, res, JSON.parse(cachedData));
+            return res.status(200).json(new ApiResponse(200, JSON.parse(cachedData)));
         }
 
         console.log('Cache miss for:', cacheKey);
@@ -29,6 +28,7 @@ export const cacheMiddleware = asyncHandler(async (req: Request, res: Response, 
         // Proceed to the next middleware/controller
         next();
     } catch (error) {
-        return new ApiError(500, error?.message || 'Internal Server Error');
+        console.error("[Cache Middleware] Redis error:", error);
+        next();
     }
 });

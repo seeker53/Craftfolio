@@ -2,11 +2,12 @@
   "compilerOptions": {
     "target": "ES6",
     "module": "CommonJS",
-    "outDir": "./dist", // Compiled JavaScript files will go to 'dist'
-    "rootDir": "./src", // Your source files are in 'src'
+    "moduleResolution": "node",
     "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "outDir": "./dist", // Compiled JavaScript files will go to 'dist'
+    "rootDir": "./src" // Your source files are in 'src'
   },
   "include": [
     "./src/**/*.ts"

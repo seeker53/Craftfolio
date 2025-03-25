@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { connectRedis } from './utils/redis';
+// import { connectRedis } from './cache/redis';
 import dotenv from 'dotenv';
 dotenv.config();
 import cookieParser from 'cookie-parser'
@@ -19,14 +19,15 @@ app.use(express.urlencoded({ extended: true, limit: '16kb' }));
 app.use(express.static("public"));
 
 // Routes (import and use routers here)
-import authRouter from './routes/auth.route';
+import { authRouter, userRouter, portfolioRouter, integrationRouter } from './routes/index';
+
 app.use("/api/v1/auth", authRouter);
 
-import userRouter from './routes/user.route';
 app.use("/api/v1/users", userRouter);
 
-import portfolioRouter from './routes/portfolio.route';
 app.use("/api/v1/portfolios", portfolioRouter);
+
+app.use("/api/v1/integrations", integrationRouter);
 
 // Redis Connection
 // connectRedis();
