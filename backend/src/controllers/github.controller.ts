@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
 import { createQueue } from "../queues/queue";
 import { QueueEvents } from "bullmq"; // Import QueueEvents
-import { redisGet } from "../cache/redis";
 import { GITHUB_QUEUE_NAME } from "../constants";
 import { asyncHandler } from "../utils/asyncHandler";
+import { checkGitHubUsername } from "../services/githubVerification.service";
 
 const githubQueue = createQueue(GITHUB_QUEUE_NAME);
 const queueEvents = new QueueEvents(GITHUB_QUEUE_NAME); // Initialize QueueEvents
@@ -50,4 +50,18 @@ export const getGitHubData = asyncHandler(async (req: Request, res: Response) =>
         console.error("[Controller] Error waiting for job to finish:", error);
         return res.status(500).json({ error: "Failed to fetch GitHub data." });
     }
+});
+
+export const verifyGitHubUsername = asyncHandler(async (req: Request, res: Response) => {
+    const { username } = req.body;
+    if (!username) {
+        return res.status(400).json({ error: "GitHub username is required." });
+    }
+
+    const rating = await checkGitHubUsername(username);
+    if (rating.error || !rating) {
+        return res.status(500).json({ error: "Failed to verify GitHub username." });
+    }
+
+    return res.status(200).json(rating);
 });

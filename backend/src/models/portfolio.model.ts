@@ -62,6 +62,8 @@ export interface IPortfolio extends Document {
     contactFormEnabled?: boolean;
     linkedPlatforms: LinkedPlatforms;
     visible: boolean;
+    yearsOfExperience: number;
+    leetcodeRating: number;
     generatePortfolioLink(): string;
 }
 
@@ -131,6 +133,8 @@ const portfolioSchema = new Schema<IPortfolio>(
             codechefUsername: { type: String, trim: true },
             atcoderUsername: { type: String, trim: true },
         },
+        yearsOfExperience: { type: Number, required: true, default: 0 },
+        leetcodeRating: { type: Number, required: true, default: 1500 },
         visible: {
             type: Boolean,
             required: true,

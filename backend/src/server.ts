@@ -1,8 +1,7 @@
 import dotenv from 'dotenv';
-import mongoose from 'mongoose';
 import { app } from './app';
 import connectDB from './config/db.config';
-
+import './updateLCRating.ts';
 // Load environment variables
 dotenv.config({
     path: './.env',

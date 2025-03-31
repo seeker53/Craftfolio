@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
 import { createQueue } from "../queues/queue";
 import { QueueEvents } from "bullmq"; // Import QueueEvents
-import { redisGet } from "../cache/redis";
 import { LEETCODE_QUEUE_NAME } from "../constants";
 import { asyncHandler } from "../utils/asyncHandler";
+import { getLeetcodeRating } from "../services/leetcodeRating.service";
 
 const leetcodeQueue = createQueue(LEETCODE_QUEUE_NAME);
 const queueEvents = new QueueEvents(LEETCODE_QUEUE_NAME); // Initialize QueueEvents
@@ -50,4 +50,20 @@ export const getLeetcodeData = asyncHandler(async (req: Request, res: Response) 
         console.error("[Controller] Error waiting for job to finish:", error);
         return res.status(500).json({ error: "Failed to fetch Leetcode data." });
     }
+});
+
+export const verifyLeetcodeUsername = asyncHandler(async (req: Request, res: Response) => {
+    const { username } = req.body;
+
+    if (!username) {
+        return res.status(400).json({ error: "LeetCode username is required." });
+    }
+
+    const ratingData = await getLeetcodeRating(username);
+
+    if (!ratingData) {
+        return res.status(404).json({ error: "LeetCode username not found or rating unavailable." });
+    }
+
+    return res.status(200).json(ratingData);
 });
