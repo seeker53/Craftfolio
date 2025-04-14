@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import { app } from './app';
 import connectDB from './config/db.config';
-import './updateLCRating.ts';
+import './updateLCRating';
 // Load environment variables
 dotenv.config({
     path: './.env',

@@ -19,7 +19,7 @@ app.use(express.urlencoded({ extended: true, limit: '16kb' }));
 app.use(express.static("public"));
 
 // Routes (import and use routers here)
-import { authRouter, userRouter, portfolioRouter, integrationRouter } from './routes/index';
+import { authRouter, userRouter, portfolioRouter, integrationRouter, feedsRouter, blogRouter } from './routes/index';
 
 app.use("/api/v1/auth", authRouter);
 
@@ -29,7 +29,8 @@ app.use("/api/v1/portfolios", portfolioRouter);
 
 app.use("/api/v1/integrations", integrationRouter);
 
-// Redis Connection
-// connectRedis();
+app.use("/api/v1/feeds", feedsRouter);
+
+app.use("/api/v1/blog", blogRouter);
 
 export { app };

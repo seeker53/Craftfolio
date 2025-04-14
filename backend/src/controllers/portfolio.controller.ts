@@ -42,8 +42,11 @@ export const createPortfolio = asyncHandler(async (req: IRequest, res: Response)
         certifications,
         linkedPlatforms,
         visible,
-        contactFormEnabled
+        contactFormEnabled,
+        leetcodeRating,
+        yearsOfExperience
     } = req.body;
+
 
     // Basic validations for personalInfo
     if (!personalInfo || !personalInfo.name || !personalInfo.title || !personalInfo.email) {
@@ -111,6 +114,8 @@ export const createPortfolio = asyncHandler(async (req: IRequest, res: Response)
         certifications: certifications || [],
         visible: visible ?? true,
         contactFormEnabled: contactFormEnabled ?? true,
+        leetcodeRating: leetcodeRating ?? 0,
+        yearsOfExperience: yearsOfExperience ?? 0,
     });
 
     const savedPortfolio = await portfolio.save();
