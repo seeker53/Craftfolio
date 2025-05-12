@@ -81,18 +81,20 @@ const registerUser = asyncHandler(async (req: IRequest, res: Response) => {
     );
 });
 
+
+
 const loginUser = asyncHandler(async (req: Request, res: Response) => {
     // Get user credentials from request body
-    const { email, username, password } = req.body;
+    const { identifier, password } = req.body;
 
     // Validate input fields
-    if ([email || username, password].some((field) => field?.trim() === "")) {
+    if ([identifier, password].some((field) => field?.trim() === "")) {
         throw new ApiError(400, "All fields are required");
     }
 
     // Check if user exists
     const user = await User.findOne({
-        $or: [{ username }, { email }],
+        $or: [{ username: identifier }, { email: identifier }],
     }).select("+password");
 
     if (!user) {
