@@ -6,6 +6,8 @@ import { uploadOnCloudinary } from "../utils/cloudinary";
 import { ApiResponse } from "../utils/ApiResponse";
 import { Types } from 'mongoose';
 import jwt from "jsonwebtoken";
+import path from 'path'
+import fs from 'fs'
 
 interface IRequest extends Request {
     user?: IUser; // User is optional to prevent errors in unauthenticated routes
@@ -26,60 +28,81 @@ const generateTokens = async (userId: Types.ObjectId) => {
 
 
 const registerUser = asyncHandler(async (req: IRequest, res: Response) => {
-    const { fullName, username, email, password } = req.body;
+    const { fullName, username, email, password } = req.body
 
-    // Validate input fields
-    if ([fullName, email, username, password].some((field) => field?.trim() === "")) {
-        throw new ApiError(400, "All fields are required");
+    // Validate required fields
+    if ([fullName, email, username, password].some((f) => !f?.trim())) {
+        throw new ApiError(400, 'All fields are required')
     }
 
-    // Check if user exists
-    const userExists = await User.findOne({ $or: [{ username }, { email }] });
-    if (userExists) {
-        throw new ApiError(400, "User already exists");
+    // Check for existing user
+    if (await User.findOne({ $or: [{ username }, { email }] })) {
+        throw new ApiError(400, 'User already exists')
     }
 
-    // Access files from request
-    const profileImageLocalPath = req.files?.profileImage?.[0]?.filename
-        ? `public/uploads/${req.files.profileImage[0].filename}`
-        : null;
-
-    const coverImageLocalPath = req.files?.coverImage?.[0]?.filename
-        ? `public/uploads/${req.files.coverImage[0].filename}`
-        : null;
-    // console.log("Profile Image Path:", profileImageLocalPath); // Debugging
-    // Ensure profile image is required
-    if (!profileImageLocalPath) {
-        throw new ApiError(400, "Profile image is required");
+    // Grab the uploaded filename from req.files
+    const profileFile = req.files?.profileImage?.[0]
+    if (!profileFile) {
+        throw new ApiError(400, 'Profile image is required')
     }
 
+    // Build absolute path: <projectRoot>/public/uploads/<filename>
+    const uploadsDir = path.join(process.cwd(), 'public', 'uploads')
+    const profileImageLocalPath = path.join(uploadsDir, profileFile.filename)
 
-    // Upload images to Cloudinary
-    const profileImage = await uploadOnCloudinary(profileImageLocalPath);
-    const coverImage = coverImageLocalPath ? await uploadOnCloudinary(coverImageLocalPath) : null;
+    // DEBUG: confirm the file exists where we expect
+    console.log(
+        'Uploading from:',
+        profileImageLocalPath,
+        'Exists?',
+        fs.existsSync(profileImageLocalPath)
+    )
 
-    // Create user in database
+    // Now upload to Cloudinary
+    const profileImage = await uploadOnCloudinary(profileImageLocalPath)
+    if (!profileImage?.url) {
+        throw new ApiError(500, 'Failed to upload profile image')
+    }
+
+    // Handle optional cover Image similarly
+    let coverImageUrl = ''
+    const coverFile = req.files?.coverImage?.[0]
+    if (coverFile) {
+        const coverImageLocalPath = path.join(uploadsDir, coverFile.filename)
+        console.log(
+            'Uploading cover from:',
+            coverImageLocalPath,
+            'Exists?',
+            fs.existsSync(coverImageLocalPath)
+        )
+        const coverImage = await uploadOnCloudinary(coverImageLocalPath)
+        if (coverImage?.url) {
+            coverImageUrl = coverImage.url
+        } else {
+            console.warn('Cover upload failed, proceeding without cover image')
+        }
+    }
+
+    // Create the user record
     const user = await User.create({
         fullName,
-        profileImage: profileImage.url,
-        coverImage: coverImage?.url || "",
-        email: email.toLowerCase(),
         username: username.toLowerCase(),
+        email: email.toLowerCase(),
         password,
-    });
+        profileImage: profileImage.url,
+        coverImage: coverImageUrl,
+    })
 
-    // Fetch the created user without sensitive fields
-    const createdUser = await User.findById(user._id).select("-password -refreshToken");
-
+    // Return user without sensitive fields
+    const createdUser = await User.findById(user._id).select('-password -refreshToken')
     if (!createdUser) {
-        throw new ApiError(500, "Something went wrong while registering the user, Please try again");
+        throw new ApiError(500, 'Error retrieving created user')
     }
 
-    // Return success response
-    return res.status(201).json(
-        new ApiResponse(200, createdUser, "User registered successfully")
-    );
-});
+    return res
+        .status(201)
+        .json(new ApiResponse(200, createdUser, 'User registered successfully'))
+})
 
 
 
