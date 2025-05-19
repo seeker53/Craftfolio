@@ -1,7 +1,6 @@
-import axios from 'axios';
+import { api } from '../lib/api'; // <- centralized axios instance
 import { User } from '../types/user';
 
-// Generic API response wrapper
 export interface ApiResponse<T> {
     statusCode: number;
     data: T;
@@ -9,24 +8,29 @@ export interface ApiResponse<T> {
     success: boolean;
 }
 
-// Login API call returns ApiResponse<User>
-export const loginUser = async (data: { identifier: string; password: string }): Promise<ApiResponse<User>> => {
-    const response = await axios.post<ApiResponse<User>>(
-        '/api/auth/login',
-        data,
-        { withCredentials: true }
-    );
+export const loginUser = async (
+    data: { identifier: string; password: string }
+): Promise<ApiResponse<User>> => {
+    // Send the correct fields to the backend (email instead of identifier)
+    const response = await api.post<ApiResponse<User>>('/api/v1/auth/login', data);
     return response.data;
 };
 
-// Register API call returns ApiResponse<User>
-export const registerUser = async (
-    data: { fullName: string; username: string; email: string; password: string }
-): Promise<ApiResponse<User>> => {
-    const response = await axios.post<ApiResponse<User>>(
-        '/api/auth/register',
-        data,
-        { withCredentials: true }
-    );
+
+export const registerUser = async (formData: FormData): Promise<ApiResponse<User>> => {
+    const response = await api.post('/api/v1/auth/register', formData, {
+        withCredentials: true,
+    });
     return response.data;
 };
+
+
+api.interceptors.response.use(
+    response => response,
+    error => {
+        if (error.response?.status === 401) {
+            // maybe trigger logout
+        }
+        return Promise.reject(error);
+    }
+);

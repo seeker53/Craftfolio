@@ -1,79 +1,122 @@
-import { useForm, SubmitHandler } from 'react-hook-form';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/useAuth';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Input } from '../ui/input'
+import { Button } from '../ui/button'
+import { useAuth } from '../../hooks/useAuth'
 
+// Zod schema (same as before)
 const registerSchema = z
     .object({
-        fullName: z.string().min(3, "Full name must be at least 3 characters"),
-        username: z.string().min(3, "Username must be at least 3 characters"),
-        email: z.string().email("Invalid email address"),
-        password: z.string().min(6, "Password must be 6+ characters"),
-        confirmPassword: z.string().min(6),
+        fullName: z.string().min(3, 'Full name must be at least 3 characters'),
+        username: z.string().min(3, 'Username must be at least 3 characters'),
+        email: z.string().email('Invalid email address'),
+        password: z.string().min(6, 'Password must be 6+ characters'),
+        confirmPassword: z.string().min(6, 'Confirm your password'),
+        profileImage: z.preprocess(
+            (val) => (val as FileList)?.[0] ?? null,
+            z
+                .instanceof(File, { message: 'Profile image is required' })
+                .refine((f) => f.type.startsWith('image/'), {
+                    message: 'Only image files are allowed',
+                })
+        ),
+        coverImage: z.preprocess(
+            (val) => (val as FileList)?.[0] ?? undefined,
+            z
+                .instanceof(File, { message: 'Cover image must be a file' })
+                .refine((f) => f.type.startsWith('image/'), {
+                    message: 'Only image files are allowed',
+                })
+                .optional()
+        ),
     })
-    .refine((data) => data.password === data.confirmPassword, {
-        message: "Passwords must match",
-        path: ["confirmPassword"],
-    });
-
-type RegisterFormInputs = z.infer<typeof registerSchema>;
+    .refine((d) => d.password === d.confirmPassword, {
+        message: 'Passwords must match',
+        path: ['confirmPassword'],
+    })
 
 export function RegisterForm() {
     const {
         register,
         handleSubmit,
-        formState: { errors },
-    } = useForm<RegisterFormInputs>({
+        formState: { errors, isSubmitting },
+    } = useForm({
         resolver: zodResolver(registerSchema),
-    });
+    })
 
-    const { register: doRegister } = useAuth();
+    const { register: doRegister } = useAuth()
 
-    const onSubmit: SubmitHandler<RegisterFormInputs> = (data) => {
-        // omit confirmPassword before sending to API
-        const { fullName, username, email, password } = data;
-        doRegister.mutate({ fullName, username, email, password });
-    };
+    // no explicit type annotation—RHF infers it from your schema
+    const onSubmit = (data: any) => {
+        const formData = new FormData()
+        formData.append('fullName', data.fullName)
+        formData.append('username', data.username)
+        formData.append('email', data.email)
+        formData.append('password', data.password)
+        formData.append('profileImage', data.profileImage)
+        if (data.coverImage) {
+            formData.append('coverImage', data.coverImage)
+        }
+        doRegister.mutate(formData)
+    }
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} encType="multipart/form-data" className="space-y-6">
+            {/* Full Name */}
             <div>
-                <label className="block text-sm font-medium mb-1">Username</label>
-                <Input {...register("username")} placeholder="johndoe" />
-                {errors.username && <p className="mt-1 text-xs text-red-600">{errors.username.message}</p>}
+                <label>Full Name</label>
+                <Input {...register('fullName')} placeholder="John Doe" />
+                {errors.fullName && <p>{errors.fullName.message}</p>}
             </div>
 
+            {/* Username */}
             <div>
-                <label className="block text-sm font-medium mb-1">Email</label>
-                <Input {...register("email")} placeholder="you@example.com" />
-                {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>}
+                <label>Username</label>
+                <Input {...register('username')} placeholder="johndoe" />
+                {errors.username && <p>{errors.username.message}</p>}
             </div>
 
+            {/* Email */}
             <div>
-                <label className="block text-sm font-medium mb-1">Password</label>
-                <Input type="password" {...register("password")} placeholder="••••••••" />
-                {errors.password && <p className="mt-1 text-xs text-red-600">{errors.password.message}</p>}
+                <label>Email</label>
+                <Input {...register('email')} placeholder="you@example.com" />
+                {errors.email && <p>{errors.email.message}</p>}
             </div>
 
+            {/* Password */}
             <div>
-                <label className="block text-sm font-medium mb-1">Confirm Password</label>
-                <Input type="password" {...register("confirmPassword")} placeholder="••••••••" />
-                {errors.confirmPassword && (
-                    <p className="mt-1 text-xs text-red-600">{errors.confirmPassword.message}</p>
-                )}
+                <label>Password</label>
+                <Input type="password" {...register('password')} placeholder="••••••••" />
+                {errors.password && <p>{errors.password.message}</p>}
             </div>
 
-            {doRegister.isError && (
-                <p className="text-sm text-red-600">
-                    Registration failed. {(doRegister.error as any)?.message || "Please try again."}
-                </p>
-            )}
+            {/* Confirm Password */}
+            <div>
+                <label>Confirm Password</label>
+                <Input type="password" {...register('confirmPassword')} placeholder="••••••••" />
+                {errors.confirmPassword && <p>{errors.confirmPassword.message}</p>}
+            </div>
 
-            <Button type="submit" className="w-full" disabled={doRegister.isPending}>
-                {doRegister.isPending ? "Registering..." : "Register"}
+            {/* Profile Image */}
+            <div>
+                <label>Profile Image</label>
+                <input type="file" accept="image/*" {...register('profileImage')} />
+                {errors.profileImage && <p>{errors.profileImage.message}</p>}
+            </div>
+
+            {/* Cover Image */}
+            <div>
+                <label>Cover Image (optional)</label>
+                <input type="file" accept="image/*" {...register('coverImage')} />
+                {errors.coverImage && <p>{errors.coverImage.message}</p>}
+            </div>
+
+            {doRegister.isError && <p>Registration failed. Please try again.</p>}
+
+            <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Registering…' : 'Register'}
             </Button>
         </form>
-    );
+    )
 }

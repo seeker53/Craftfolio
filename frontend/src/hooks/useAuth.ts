@@ -10,16 +10,19 @@ export const useAuth = () => {
     // Login mutation: on success, store user and go to dashboard
     const login = useMutation({
         mutationFn: loginUser,
-        onSuccess: (res) => {
-            setUser(res.data);
-            navigate('/dashboard');
+        onSuccess: (data) => {
+            setUser(data.data);
+            navigate('/dashboard'); // assuming API response is ApiResponse<User>
         },
+        onError: (error) => {
+            console.error('Login error:', error);
+        }
     });
 
     // Register mutation: on success, redirect to login page
     const register = useMutation({
         mutationFn: registerUser,
-        onSuccess: (res) => {
+        onSuccess: () => {
             // Optionally show a toast: "Registration successful! Please log in."
             navigate('/login');
         },

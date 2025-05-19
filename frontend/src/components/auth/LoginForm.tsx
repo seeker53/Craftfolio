@@ -1,36 +1,32 @@
 import { useForm, SubmitHandler } from 'react-hook-form';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/useAuth';
+import { Input } from '../ui/input';
+import { Button } from '../ui/button';
+import { useAuth } from '../../hooks/useAuth';
 import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { zodResolver } from '@hookform/resolvers/zod'; // make sure to import zodResolver
 
-const loginSchema = z
-    .object({
-        identifier: z.string().min(3, "Username or email is required"),
-        password: z.string().min(6, "Password must be 6+ characters"),
-        confirmPassword: z.string().min(6),
-    })
-    .refine((data) => data.password === data.confirmPassword, {
-        message: "Passwords must match",
-        path: ["confirmPassword"],
-    });
+// Define the schema for login
+const loginSchema = z.object({
+    identifier: z.string().min(3, "Username or email is required"),
+    password: z.string().min(6, "Password must be 6+ characters"),
+});
 
 type LoginFormInputs = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
+    // Hook form with zod validation schema
     const {
         register,
         handleSubmit,
         formState: { errors },
-    } = useForm<LoginFormInputs>(
-        {
-            resolver: zodResolver(loginSchema),
-        }
-    );
+    } = useForm<LoginFormInputs>({
+        resolver: zodResolver(loginSchema), // Use zodResolver to handle validation
+    });
+
     const { login: doLogin } = useAuth();
 
     const onSubmit: SubmitHandler<LoginFormInputs> = (data) => {
+        console.log("Form submitted with:", data);
         doLogin.mutate(data);
     };
 
